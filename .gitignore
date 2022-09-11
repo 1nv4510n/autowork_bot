@@ -1,2 +1,11 @@
 /.env
 /bot.log
+/bot/__pycache__
+/bot/db/__pycache__
+/bot/handlers/__pycache__
+/bot/handlers/users/__pycache__
+/bot/middlewares/__pycache__
+/bot/keyboards/__pycache__
+/bot/utils/__pycache__
+/bot/product_parser/__pycache__
+/bot/product_parser/auth.json
