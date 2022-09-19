@@ -12,8 +12,9 @@ info = {
     'company_name' : '',
     'company_status' : '',
     'realiability' : '',
-    'inn' : '',
-    'kpp' : '',
+    'company_inn' : '',
+    'company_kpp' : '',
+    'company_ogrn' : '',
     'table_status' : ''
 }
 
@@ -44,6 +45,14 @@ class RusProfileParser:
         if page_status is None:
             company_info['status'] = 'OK'
             company_info['company_name'] = main_page.find('h1', {'itemprop' : 'name'}).string[2:].strip()
+            if company_info['company_name'][:2] == 'ИП':
+                company_info['company_inn'] = main_page.find('span', {'id' : 'clip_inn'}).string
+                company_info['company_kpp'] = None
+                company_info['company_ogrn'] = main_page.find('span', {'id' : 'clip_ogrnip'}).string
+                company_info['table_status'] = '1'
+                company_info['realiability'] = 'OK'
+                company_info['company_status'] = 'OK'
+                return company_info
             company_info['table_status'] = '2' if 'ООО' in company_info['company_name'] else '1'
             company_info['company_status'] = main_page.find('div', {'class' : 'company-status active-yes'})
             if company_info['company_status'] is None:
@@ -58,6 +67,7 @@ class RusProfileParser:
             
             company_info['company_inn'] = main_page.find('span', {'id' : 'clip_inn'}).string
             company_info['company_kpp'] = main_page.find('span', {'id' : 'clip_kpp'}).string
+            company_info['company_ogrn'] = main_page.find('span', {'id' : 'clip_ogrn'}).string
 
             # self.driver.save_screenshot(f'screenshots/{screenshot_filename}')
 

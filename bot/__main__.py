@@ -16,7 +16,7 @@ from bot.commands import set_commands
 from bot.configreader import config
 from bot.middlewares.db_middleware import DbSessionMiddleware
 
-from bot.handlers import users_router
+from bot.handlers import users_router, admins_router
 
 
 async def main():
@@ -43,11 +43,14 @@ async def main():
     # Register middlewares
     dp.message.middleware(DbSessionMiddleware(db_pool))
     dp.callback_query.middleware(DbSessionMiddleware(db_pool))
+    dp.callback_query.outer_middleware(DbSessionMiddleware(db_pool))
+    dp.message.outer_middleware(DbSessionMiddleware(db_pool))
 
     # Register /-commands in UI
     await set_commands(bot)
     
     dp.include_router(users_router)
+    dp.include_router(admins_router)
 
     try:
         if not config.webhook_domain:

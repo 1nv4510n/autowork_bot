@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from gspread.exceptions import WorksheetNotFound, SpreadsheetNotFound
 
 from bot.configreader import config
-from bot.db.requests import is_user_exists, add_user, get_spreadsheet_url, get_sheet_name
+from bot.db.requests import is_user_exists, is_user_apply_exists, get_spreadsheet_url, get_sheet_name, add_application
 from bot.keyboards.default_keyboard import make_main_menu_keyboard, make_settings_menu_keyboard, \
     make_work_choice_keyboard
 from bot.product_parser.sheets import GoogleSheets
@@ -17,12 +17,14 @@ from .states.work_states import WorkStates
 router = Router()
 
 @router.message(commands=['start'])
-async def start_handler(message: Message, session: AsyncSession, state: FSMContext) -> None:
-    if not await is_user_exists(session, message.from_user.id):
-        await state.set_state(RegisterStates.enter_name)
-        await message.answer('Введите ваше ФИО через пробел')
+async def start_handler(message: Message, session: AsyncSession, state: FSMContext) -> None: 
+    if await is_user_exists(session, message.from_user.id):
+        await message.answer('Добро пожаловать!', reply_markup=make_main_menu_keyboard())
+    elif await is_user_apply_exists(session, message.from_user.id):
+        await message.answer('Ожидайте одобрения заявки.')
     else:
-        await message.answer('Добро пожаловать!', reply_markup=make_main_menu_keyboard()) 
+        await state.set_state(RegisterStates.enter_name)
+        await message.answer('Добро пожаловать\n\nВведите ваше ФИО через пробел')
 
 @router.message(RegisterStates.enter_name)
 async def enter_name_handler(message: Message, session: AsyncSession, state: FSMContext) -> None:
@@ -30,8 +32,8 @@ async def enter_name_handler(message: Message, session: AsyncSession, state: FSM
     if (len(full_name.split(' ')) != 3):
         await message.answer('Ошибка! Введите ваше ФИО через пробел')
     else:
-        await add_user(session, message.from_user.id, full_name)
-        await message.answer('Регистрация прошла успешно!', reply_markup=make_main_menu_keyboard())
+        await add_application(session, message.from_user.id, full_name)
+        await message.answer('Регистрация прошла успешно! Ожидайте одобрения заявки.')
         await state.clear()
         
 @router.callback_query(text='settings')

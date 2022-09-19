@@ -1,6 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+
 def make_main_menu_keyboard() -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
     
@@ -8,7 +9,8 @@ def make_main_menu_keyboard() -> InlineKeyboardMarkup:
         InlineKeyboardButton(text='💼 Работать', callback_data='start_work'),
         InlineKeyboardButton(text='📊 Статистика', callback_data='statistics')
     )
-    keyboard.row(InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings'))
+    keyboard.row(InlineKeyboardButton(text='⚙️ Настройки', callback_data='settings'),
+                 InlineKeyboardButton(text='💻 Админ-Меню', callback_data='admin_menu'))
     keyboard.row(InlineKeyboardButton(text='🚫 Выход', callback_data='exit_menu'))
     
     return keyboard.as_markup()

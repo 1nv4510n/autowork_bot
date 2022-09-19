@@ -2,9 +2,10 @@ from aiogram import Router
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
+from urllib.parse import urlparse
 
 from bot.configreader import config
-from bot.db.requests import get_sheet_name, get_spreadsheet_url, add_line_count
+from bot.db.requests import add_ogrn, delete_ogrn, get_sheet_name, get_spreadsheet_url, add_line_count, get_ogrn
 
 from .states.work_states import WorkStates
 from bot.product_parser.rusprofile import RusProfileParser
@@ -26,7 +27,8 @@ async def classic_work_mode_callback(call: CallbackQuery, state: FSMContext, ses
             'googlesheets' : GoogleSheets(
                 spreadsheet_url=await get_spreadsheet_url(session, call.from_user.id),
                 worksheet_name=await get_sheet_name(session, call.from_user.id)
-            )
+            ),
+            'save_ogrn' : False
         }
     )
     
@@ -38,12 +40,23 @@ async def file_work_mode_callback(call: CallbackQuery, state: FSMContext, sessio
     await state.set_state(WorkStates.send_file)
     
 @router.message(WorkStates.send_website)
-async def send_website_handler(message: Message, state: FSMContext) -> None:
+async def send_website_handler(message: Message, state: FSMContext, session: AsyncSession) -> None:
     if 'http' not in message.text:
         await message.answer('Проверьте правильность ссылки и отправьте снова')
-    else:
+    else:  
+        domain = urlparse(message.text).netloc
+        ogrn = await get_ogrn(session, domain)
+        if ogrn is not None:
+            company_info = rusprofile_parser.search_by_inn(ogrn)
+            if company_info['status'] == 'ERROR' or company_info['company_status'] == 'ERROR' or company_info['realiability'] == 'ERROR':
+                await delete_ogrn(session, ogrn)
+            else:
+                await state.set_state(WorkStates.send_city)
+                await state.update_data(product_url=message.text, company_info=company_info)
+                await message.answer('Введите город')
+                return
         await state.set_state(WorkStates.send_inn)
-        await state.update_data(product_url=message.text)
+        await state.update_data(product_url=message.text, save_ogrn=True)
         await message.answer('Введите ИНН/КПП/ОГРН компании')
         
 @router.message(WorkStates.send_inn)
@@ -81,6 +94,13 @@ async def send_price_handler(message: Message, state: FSMContext, session: Async
     await state.update_data(product_price=message.text)
     
     current_data = await state.get_data()
+    
+    
+    if current_data['save_ogrn']:
+        await add_ogrn(
+            session, urlparse(current_data['product_url']).netloc, current_data['company_info']['company_ogrn']
+        )
+        await state.update_data(save_ogrn=False)
     
     google_sheets: GoogleSheets = current_data['googlesheets']
     
