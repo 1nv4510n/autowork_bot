@@ -1,4 +1,4 @@
-from contextlib import suppress
+
 import gspread
 from . import date
 
@@ -30,6 +30,8 @@ class GoogleSheets:
             data['company_info']['table_status'],
             'Том прайс листов Книга 3'
         ]
+
         
         # self.worksheet.append_row(values=values, value_input_option='USER_ENTERED', table_range='A18')
-        self.worksheet.update(f'D{len(self.worksheet.col_values(4)) + 1}', [values])
+        response = self.worksheet.update(f'D{len(self.worksheet.col_values(4)) + 1}', [values])
+        print(response)

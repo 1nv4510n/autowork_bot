@@ -34,10 +34,6 @@ async def classic_work_mode_callback(call: CallbackQuery, state: FSMContext, ses
     
     await call.message.answer('Отправьте ссылку на товар')
     await call.message.delete()
-
-@router.callback_query(text='file_work')
-async def file_work_mode_callback(call: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
-    await state.set_state(WorkStates.send_file)
     
 @router.message(WorkStates.send_website)
 async def send_website_handler(message: Message, state: FSMContext, session: AsyncSession) -> None:
